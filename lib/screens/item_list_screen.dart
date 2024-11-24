@@ -27,7 +27,7 @@ class ItemListScreen extends StatelessWidget {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ItemDetailScreen(item: item),
+                  builder: (context) => ItemDetailScreen( item: item),
                 ),
               );
             },

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart'; // Import for image picking
-import 'dart:io'; // Import for File
-import './avatar_screen.dart'; // Import your AvatarScreen
+import 'package:shared_preferences/shared_preferences.dart'; 
+import './camera_screen.dart';
+import './gallery_screen.dart';
+import './avatar_screen.dart';
 import '../models/item_model.dart';
 
-class ItemDetailScreen extends StatelessWidget {
+class ItemDetailScreen extends StatefulWidget {
   final ItemModel item;
 
   const ItemDetailScreen({
@@ -12,48 +13,33 @@ class ItemDetailScreen extends StatelessWidget {
     required this.item,
   }) : super(key: key);
 
-  Future<void> _takePhoto(BuildContext context) async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? photo = await _picker.pickImage(source: ImageSource.camera);
-    if (photo != null) {
-      // Handle the photo (e.g., navigate to another screen with the photo)
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PhotoPreviewScreen(imagePath: photo.path),
-        ),
-      );
-    }
-  }
+  @override
+  _ItemDetailScreenState createState() => _ItemDetailScreenState();
+}
 
-  Future<void> _pickFromGallery(BuildContext context) async {
-    final ImagePicker _picker = ImagePicker();
-    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
-    if (image != null) {
-      // Handle the selected image (e.g., navigate to another screen with the image)
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PhotoPreviewScreen(imagePath: image.path),
-        ),
-      );
-    }
+class _ItemDetailScreenState extends State<ItemDetailScreen> {
+  bool _showButtons = false;
+
+  void _toggleButtons() {
+    setState(() {
+      _showButtons = !_showButtons;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(item.title),
+        title: Text(widget.item.title),
       ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Hero(
-              tag: item.imageUrl,
+              tag: widget.item.imageUrl,
               child: Image.network(
-                item.imageUrl,
+                widget.item.imageUrl,
                 height: 300,
                 width: double.infinity,
                 fit: BoxFit.cover,
@@ -72,7 +58,7 @@ class ItemDetailScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.title,
+                    widget.item.title,
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
@@ -80,104 +66,111 @@ class ItemDetailScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 12),
                   Text(
-                    item.description,
+                    widget.item.description,
                     style: TextStyle(
                       fontSize: 16,
                       height: 1.5,
                     ),
                   ),
-                  SizedBox(height: 20), // Add some space before buttons
+                  SizedBox(height: 20),
 
-                  // Row for buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      ElevatedButton(
-                        onPressed: () => _takePhoto(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.camera_alt),
-                            SizedBox(width: 8),
-                            Text('Try it on'),
-                          ],
-                        ),
+                  ElevatedButton(
+                    onPressed: _toggleButtons,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      ElevatedButton(
-                        onPressed: () => _pickFromGallery(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.photo_library),
-                            SizedBox(width: 8),
-                            Text('Gallery'),
-                          ],
-                        ),
-                      ),
-                      ElevatedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (context) => AvatarScreen()),
-                          );
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 20, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.face),
-                            SizedBox(width: 8),
-                            Text('Avatar'),
-                          ],
-                        ),
-                      ),
-                    ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.camera_alt),
+                        SizedBox(width: 8),
+                        Text('Try it on'),
+                      ],
+                    ),
                   ),
+                  if (_showButtons) ...[
+                    SizedBox(height: 20),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            final prefs = await SharedPreferences
+                                .getInstance();
+Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => AvatarScreen(
+                                  prefs: prefs,
+                                  assetGlbUrl:
+                                      '',
+                                ),
+                              ),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.green),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.face),
+                              SizedBox(width: 8),
+                              Text('Avatar'),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => CameraScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.red),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.camera_alt),
+                              SizedBox(width: 8),
+                              Text('Camera'),
+                            ],
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => GalleryScreen()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.photo_library),
+                              SizedBox(width: 8),
+                              Text('Gallery'),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
           ],
         ),
       ),
-    );
-  }
-}
-
-// Placeholder for PhotoPreviewScreen
-class PhotoPreviewScreen extends StatelessWidget {
-  final String imagePath;
-
-  const PhotoPreviewScreen({Key? key, required this.imagePath})
-      : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text('Photo Preview')),
-      body: Center(child: Image.file(File(imagePath))),
     );
   }
 }
